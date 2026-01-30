@@ -115,3 +115,19 @@ def clean_antal(df: pd.DataFrame) -> pd.DataFrame:
     col = col.replace(word_map)
     df["antal"] = pd.to_numeric(col, errors="coerce").fillna(1)
     return df
+
+def clean_kundtyp(df: pd.DataFrame) -> pd.DataFrame:
+    """Normalize customer type labels."""
+    if "kundtyp" not in df.columns:
+        return df
+    mapping = {
+        "privat": "private",
+        "konsument": "private",
+        "b2c": "private",
+        "företag": "business",
+        "firma": "business",
+        "b2b": "business",
+        }
+    col = _safe_str(df["kundtyp"]).replace(mapping)
+    df["kundtyp"] = col
+    return df
