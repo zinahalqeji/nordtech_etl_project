@@ -102,3 +102,16 @@ def clean_leveransstatus(df: pd.DataFrame) -> pd.DataFrame:
     df["leveransstatus"] = col
     return df
 
+def clean_antal(df: pd.DataFrame) -> pd.DataFrame:
+    """Clean quantity column by converting Swedish words and removing noise.""" 
+    if "antal" not in df.columns:
+        return df
+    word_map = {
+        "en": 1, "ett": 1, "två": 2, "tva": 2, "tre": 3, "fyra": 4, "fem": 5, "sex": 6, "sju": 7, "åtta": 8,"atta": 8, "nio": 9, "tio": 10,
+        }
+    col = _safe_str(df["antal"])
+    col = col.str.replace('"', "", regex=False)
+    col = col.str.replace("st", "", regex=False).str.strip()
+    col = col.replace(word_map)
+    df["antal"] = pd.to_numeric(col, errors="coerce").fillna(1)
+    return df
