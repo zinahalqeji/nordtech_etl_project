@@ -205,3 +205,16 @@ def remove_duplicates(
     if unique_keys:
         df = df.drop_duplicates(subset=unique_keys, keep="first")
     return df
+
+
+def fix_reversed_dates(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Fix rows where delivery date is earlier than order date.
+    """
+    if "orderdatum" not in df.columns or "leveransdatum" not in df.columns:
+        return df
+    mask = df["leveransdatum"] < df["orderdatum"]
+    df.loc[mask, ["orderdatum", "leveransdatum"]] = df.loc[
+        mask, ["leveransdatum", "orderdatum"]
+    ].values
+    return df
