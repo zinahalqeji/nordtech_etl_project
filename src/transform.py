@@ -231,3 +231,14 @@ def clean_recension_text(df: pd.DataFrame) -> pd.DataFrame:
     df["recension_text"] = col 
     return df
 
+
+def clean_id_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Clean ID-like columns by converting to string and stripping whitespace.
+    """
+    id_cols = ["order_id", "orderrad_id", "kund_id", "produkt_sku"]
+    for col in id_cols:
+        if col in df.columns:
+            df[col] = df[col].astype(str).str.strip()
+            
+    return df
