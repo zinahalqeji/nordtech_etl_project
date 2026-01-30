@@ -7,7 +7,9 @@ import pandas as pd
 # ----------------------------------------------------------
 
 def _safe_str(col: pd.Series) -> pd.Series:
-    """Convert a column to lowercase, stripped strings safely."""
+    """
+    Convert a column to lowercase, stripped strings safely.
+    """
     return col.astype(str).str.strip().str.lower()
 
 
@@ -17,7 +19,9 @@ def _safe_str(col: pd.Series) -> pd.Series:
 
 
 def clean_date(df: pd.DataFrame) -> pd.DataFrame:
-    """Convert date columns to datetime."""
+    """
+    Convert date columns to datetime.
+    """
     date_cols = ["orderdatum", "leveransdatum", "recensionsdatum"]
     for col in date_cols:
         if col in df.columns:
@@ -26,7 +30,9 @@ def clean_date(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def clean_prices(df: pd.DataFrame) -> pd.DataFrame:
-    """Clean price column by removing currency symbols and converting to float."""
+    """
+    Clean price column by removing currency symbols and converting to float.
+    """
     if "pris_per_enhet" not in df.columns:
         return df
     col = (
@@ -43,7 +49,9 @@ def clean_prices(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def clean_region(df: pd.DataFrame) -> pd.DataFrame:
-    """Normalize region names and fix common misspellings."""
+    """
+    Normalize region names and fix common misspellings.
+    """
     if "region" not in df.columns:
         return df 
     mapping = {
@@ -63,7 +71,9 @@ def clean_region(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 def clean_payment(df: pd.DataFrame) -> pd.DataFrame:
-    """Normalize payment method names."""
+    """
+    Normalize payment method names.
+    """
     if "betalmetod" not in df.columns:
         return df
     mapping = {
@@ -80,9 +90,9 @@ def clean_payment(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 def clean_leveransstatus(df: pd.DataFrame) -> pd.DataFrame:
-    
-    """Normalize delivery status labels."""
-    
+    """
+    Normalize delivery status labels.
+    """
     if "leveransstatus" not in df.columns:
         return df
     mapping = {
@@ -103,7 +113,9 @@ def clean_leveransstatus(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 def clean_antal(df: pd.DataFrame) -> pd.DataFrame:
-    """Clean quantity column by converting Swedish words and removing noise.""" 
+    """
+    Clean quantity column by converting Swedish words and removing noise.
+    """ 
     if "antal" not in df.columns:
         return df
     word_map = {
@@ -117,7 +129,9 @@ def clean_antal(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 def clean_kundtyp(df: pd.DataFrame) -> pd.DataFrame:
-    """Normalize customer type labels."""
+    """
+    Normalize customer type labels.
+    """
     if "kundtyp" not in df.columns:
         return df
     mapping = {
@@ -131,3 +145,25 @@ def clean_kundtyp(df: pd.DataFrame) -> pd.DataFrame:
     col = _safe_str(df["kundtyp"]).replace(mapping)
     df["kundtyp"] = col
     return df
+
+def clean_betyg(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Clean rating column:
+    - convert to numeric
+    - clip to valid range [1, 5]
+    - fill missing with median
+    """
+    if "betyg" not in df.columns:
+        return df
+
+    # Convert to numeric (invalid values become NaN)
+    col = pd.to_numeric(df["betyg"], errors="coerce")
+
+    # Enforce valid rating range
+    col = col.clip(1, 5)
+
+    # Fill missing values with median
+    df["betyg"] = col.fillna(col.median())
+
+    return df
+
