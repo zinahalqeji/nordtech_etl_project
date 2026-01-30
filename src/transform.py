@@ -62,3 +62,20 @@ def clean_region(df: pd.DataFrame) -> pd.DataFrame:
     col = _safe_str(df["region"]).replace("nan", None).replace(mapping) 
     df["region"] = col 
     return df
+
+def clean_payment(df: pd.DataFrame) -> pd.DataFrame:
+    """Normalize payment method names."""
+    if "betalmetod" not in df.columns:
+        return df
+    mapping = {
+        "kort": "card",
+        "kreditkort": "card",
+        "visa": "card",
+        "mastercard": "card",
+        "swish": "swish",
+        "mobilbetalning": "swish",
+        "faktura": "invoice",
+        }
+    col = _safe_str(df["betalmetod"]).replace("nan", None).replace(mapping)
+    df["betalmetod"] = col.fillna("unknown")
+    return df
