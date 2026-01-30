@@ -278,46 +278,26 @@ def remove_duplicates(
 # ---------------------------------------------------------
 
 
-def clean_all(df: pd.DataFrame) -> pd.DataFrame:
+def transform_data(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Run the full cleaning pipeline in a logical order.
+    Run the full transformation pipeline on the raw dataset.
+    Applies all cleaning functions in the correct order.
     """
-    print("→ Cleaning column names...")
+    print("[TRANSFORM] Starting transformation pipeline...")
+
     df = clean_column_names(df)
-
-    print("→ Cleaning ID columns...")
     df = clean_id_columns(df)
-
-    print("→ Cleaning dates...")
     df = clean_date(df)
     df = fix_reversed_dates(df)
-
-    print("→ Cleaning prices...")
-    df = clean_prices(df)
-
-    print("→ Cleaning region...")
-    df = clean_region(df)
-
-    print("→ Cleaning payment method...")
-    df = clean_payment(df)
-
-    print("→ Cleaning quantity...")
-    df = clean_antal(df)
-
-    print("→ Cleaning customer type...")
     df = clean_kundtyp(df)
-
-    print("→ Cleaning delivery status...")
+    df = clean_antal(df)
+    df = clean_prices(df)
+    df = clean_payment(df)
     df = clean_leveransstatus(df)
-
-    print("→ Cleaning ratings...")
+    df = clean_region(df)
     df = clean_betyg(df)
-
-    print("→ Cleaning review text...")
     df = clean_recension_text(df)
-
-    print("→ Removing duplicates...")
     df = remove_duplicates(df)
 
-    print("✓ Cleaning pipeline completed.")
+    print("[TRANSFORM] Transformation pipeline completed.")
     return df

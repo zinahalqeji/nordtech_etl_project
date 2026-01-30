@@ -8,24 +8,14 @@ from pathlib import Path
 import pandas as pd
 
 
+# --------------------------------------------------
+# Generic CSV loader
+# --------------------------------------------------
+
+
 def load_csv(file_path: Path) -> pd.DataFrame:
     """
     Load a CSV file into a pandas DataFrame.
-
-    Parameters
-    ----------
-    file_path : Path
-        Path to the CSV file.
-
-    Returns
-    -------
-    pd.DataFrame
-        Loaded dataset.
-
-    Raises
-    ------
-    FileNotFoundError
-        If the file does not exist.
     """
     file_path = Path(file_path)
 
@@ -33,5 +23,21 @@ def load_csv(file_path: Path) -> pd.DataFrame:
         raise FileNotFoundError(f"File not found: {file_path}")
 
     df = pd.read_csv(file_path)
-    print(f"Loaded CSV: {file_path} (rows={len(df)}, cols={len(df.columns)})")
+    print(f"[EXTRACT] Loaded CSV: {file_path} (rows={len(df)}, cols={len(df.columns)})")
     return df
+
+
+# --------------------------------------------------
+# Main extraction function for the ETL pipeline
+# --------------------------------------------------
+
+
+def load_raw_data() -> pd.DataFrame:
+    """
+    Load the raw Nordtech dataset from data/raw.
+    """
+    root = Path(__file__).resolve().parents[1]
+    raw_path = root / "data" / "raw" / "nordtech_data.csv"
+
+    print(f"[EXTRACT] Loading raw dataset from: {raw_path}")
+    return load_csv(raw_path)
