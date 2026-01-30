@@ -1,9 +1,20 @@
+"""
+transform.py
+
+This module contains all data cleaning and transformation logic for the
+Nordtech ETL pipeline. Each function handles a specific cleaning task,
+and the `clean_all()` function orchestrates the full transformation
+pipeline in a clear, maintainable sequence.
+"""
+
+from __future__ import annotations
 import pandas as pd
 import numpy as np
 
+
 # ---------------------------------------------------------
-#  Helper utilities
-# ----------------------------------------------------------
+# Helper utilities
+# ---------------------------------------------------------
 
 
 def _safe_str(col: pd.Series) -> pd.Series:
@@ -14,8 +25,29 @@ def _safe_str(col: pd.Series) -> pd.Series:
 
 
 # ---------------------------------------------------------
-#  Data cleaning functions
+# Cleaning functions
 # ---------------------------------------------------------
+
+
+def clean_column_names(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Standardize column names: lowercase, underscores, stripped.
+    """
+    df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
+    return df
+
+
+def clean_id_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Clean ID-like columns by converting to string and stripping whitespace.
+    """
+    id_cols = ["order_id", "orderrad_id", "kund_id", "produkt_sku"]
+
+    for col in id_cols:
+        if col in df.columns:
+            df[col] = df[col].astype(str).str.strip()
+
+    return df
 
 
 def clean_date(df: pd.DataFrame) -> pd.DataFrame:
@@ -23,9 +55,26 @@ def clean_date(df: pd.DataFrame) -> pd.DataFrame:
     Convert date columns to datetime.
     """
     date_cols = ["orderdatum", "leveransdatum", "recensionsdatum"]
+
     for col in date_cols:
         if col in df.columns:
             df[col] = pd.to_datetime(df[col], errors="coerce")
+
+    return df
+
+
+def fix_reversed_dates(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Fix rows where delivery date is earlier than order date.
+    """
+    if "orderdatum" not in df.columns or "leveransdatum" not in df.columns:
+        return df
+
+    mask = df["leveransdatum"] < df["orderdatum"]
+    df.loc[mask, ["orderdatum", "leveransdatum"]] = df.loc[
+        mask, ["leveransdatum", "orderdatum"]
+    ].values
+
     return df
 
 
@@ -35,6 +84,7 @@ def clean_prices(df: pd.DataFrame) -> pd.DataFrame:
     """
     if "pris_per_enhet" not in df.columns:
         return df
+
     col = (
         df["pris_per_enhet"]
         .astype(str)
@@ -44,6 +94,7 @@ def clean_prices(df: pd.DataFrame) -> pd.DataFrame:
         .str.replace(":-", "")
         .str.replace(",", ".")
     )
+
     df["pris_per_enhet"] = pd.to_numeric(col, errors="coerce")
     return df
 
@@ -54,6 +105,7 @@ def clean_region(df: pd.DataFrame) -> pd.DataFrame:
     """
     if "region" not in df.columns:
         return df
+
     mapping = {
         "sthlm": "stockholm",
         "sthml": "stockholm",
@@ -66,8 +118,10 @@ def clean_region(df: pd.DataFrame) -> pd.DataFrame:
         "vasteras": "västerås",
         "norr": "norrland",
     }
+
     col = _safe_str(df["region"]).replace("nan", None).replace(mapping)
     df["region"] = col
+
     return df
 
 
@@ -77,6 +131,7 @@ def clean_payment(df: pd.DataFrame) -> pd.DataFrame:
     """
     if "betalmetod" not in df.columns:
         return df
+
     mapping = {
         "kort": "card",
         "kreditkort": "card",
@@ -86,41 +141,10 @@ def clean_payment(df: pd.DataFrame) -> pd.DataFrame:
         "mobilbetalning": "swish",
         "faktura": "invoice",
     }
-    col = (
-        _safe_str(df["betalmetod"])
-        .replace("nan", None)
-        .replace(mapping)
-        .replace(["nan", "none", ""], "unknown")
-    )
-    df["betalmetod"] = col
-    return df
 
+    col = _safe_str(df["betalmetod"]).replace("nan", None).replace(mapping)
+    df["betalmetod"] = col.fillna("unknown")
 
-def clean_leveransstatus(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Normalize delivery status labels.
-    """
-    if "leveransstatus" not in df.columns:
-        return df
-    mapping = {
-        "levererad": "delivered",
-        "mottagen": "received",
-        "skickad": "sent",
-        "under transport": "in_transit",
-        "på väg": "in_transit",
-        "pa väg": "in_transit",
-        "pa vag": "in_transit",
-        "retur": "returned",
-        "returnerad": "returned",
-        "återsänd": "returned",
-        "atersand": "returned",
-    }
-    col = (
-        _safe_str(df["leveransstatus"])
-        .replace(mapping)
-        .replace(["nan", "none", ""], "unknown")
-    )
-    df["leveransstatus"] = col
     return df
 
 
@@ -130,6 +154,7 @@ def clean_antal(df: pd.DataFrame) -> pd.DataFrame:
     """
     if "antal" not in df.columns:
         return df
+
     word_map = {
         "en": 1,
         "ett": 1,
@@ -145,11 +170,14 @@ def clean_antal(df: pd.DataFrame) -> pd.DataFrame:
         "nio": 9,
         "tio": 10,
     }
+
     col = _safe_str(df["antal"])
     col = col.str.replace('"', "", regex=False)
     col = col.str.replace("st", "", regex=False).str.strip()
     col = col.replace(word_map)
+
     df["antal"] = pd.to_numeric(col, errors="coerce").fillna(1)
+
     return df
 
 
@@ -159,6 +187,7 @@ def clean_kundtyp(df: pd.DataFrame) -> pd.DataFrame:
     """
     if "kundtyp" not in df.columns:
         return df
+
     mapping = {
         "privat": "private",
         "konsument": "private",
@@ -167,30 +196,66 @@ def clean_kundtyp(df: pd.DataFrame) -> pd.DataFrame:
         "firma": "business",
         "b2b": "business",
     }
+
     col = _safe_str(df["kundtyp"]).replace(mapping)
     df["kundtyp"] = col
+
+    return df
+
+
+def clean_leveransstatus(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Normalize delivery status labels.
+    """
+    if "leveransstatus" not in df.columns:
+        return df
+
+    mapping = {
+        "levererad": "delivered",
+        "mottagen": "received",
+        "skickad": "sent",
+        "under transport": "in_transit",
+        "på väg": "in_transit",
+        "pa väg": "in_transit",
+        "pa vag": "in_transit",
+        "retur": "returned",
+        "returnerad": "returned",
+        "återsänd": "returned",
+        "atersand": "returned",
+    }
+
+    col = _safe_str(df["leveransstatus"]).replace(mapping)
+    col = col.replace(["nan", "none", ""], "unknown")
+
+    df["leveransstatus"] = col
     return df
 
 
 def clean_betyg(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Clean rating column:
-    - convert to numeric
-    - clip to valid range [1, 5]
-    - fill missing with median
+    Clean rating column: numeric, clipped, median-filled.
     """
     if "betyg" not in df.columns:
         return df
 
-    # Convert to numeric (invalid values become NaN)
     col = pd.to_numeric(df["betyg"], errors="coerce")
-
-    # Enforce valid rating range
     col = col.clip(1, 5)
-
-    # Fill missing values with median
     df["betyg"] = col.fillna(col.median())
 
+    return df
+
+
+def clean_recension_text(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Clean review text column by removing placeholder strings.
+    """
+    if "recension_text" not in df.columns:
+        return df
+
+    col = df["recension_text"].astype(str).str.strip()
+    col = col.replace(["nan", "none", "null", "na", ""], np.nan)
+
+    df["recension_text"] = col
     return df
 
 
@@ -200,45 +265,59 @@ def remove_duplicates(
     """
     Remove duplicate rows. If unique keys are provided, enforce uniqueness.
     """
-
     df = df.drop_duplicates()
+
     if unique_keys:
         df = df.drop_duplicates(subset=unique_keys, keep="first")
+
     return df
 
 
-def fix_reversed_dates(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Fix rows where delivery date is earlier than order date.
-    """
-    if "orderdatum" not in df.columns or "leveransdatum" not in df.columns:
-        return df
-    mask = df["leveransdatum"] < df["orderdatum"]
-    df.loc[mask, ["orderdatum", "leveransdatum"]] = df.loc[
-        mask, ["leveransdatum", "orderdatum"]
-    ].values
-    return df
+# ---------------------------------------------------------
+# Full pipeline
+# ---------------------------------------------------------
 
 
-def clean_recension_text(df: pd.DataFrame) -> pd.DataFrame:
+def clean_all(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Clean review text column by removing placeholder strings.
-    """ 
-    if "recension_text" not in df.columns:
-        return df
-    col = df["recension_text"].astype(str).str.strip()
-    col = col.replace(["nan", "none", "null", "na", ""], np.nan)
-    df["recension_text"] = col 
-    return df
+    Run the full cleaning pipeline in a logical order.
+    """
+    print("→ Cleaning column names...")
+    df = clean_column_names(df)
 
+    print("→ Cleaning ID columns...")
+    df = clean_id_columns(df)
 
-def clean_id_columns(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Clean ID-like columns by converting to string and stripping whitespace.
-    """
-    id_cols = ["order_id", "orderrad_id", "kund_id", "produkt_sku"]
-    for col in id_cols:
-        if col in df.columns:
-            df[col] = df[col].astype(str).str.strip()
-            
+    print("→ Cleaning dates...")
+    df = clean_date(df)
+    df = fix_reversed_dates(df)
+
+    print("→ Cleaning prices...")
+    df = clean_prices(df)
+
+    print("→ Cleaning region...")
+    df = clean_region(df)
+
+    print("→ Cleaning payment method...")
+    df = clean_payment(df)
+
+    print("→ Cleaning quantity...")
+    df = clean_antal(df)
+
+    print("→ Cleaning customer type...")
+    df = clean_kundtyp(df)
+
+    print("→ Cleaning delivery status...")
+    df = clean_leveransstatus(df)
+
+    print("→ Cleaning ratings...")
+    df = clean_betyg(df)
+
+    print("→ Cleaning review text...")
+    df = clean_recension_text(df)
+
+    print("→ Removing duplicates...")
+    df = remove_duplicates(df)
+
+    print("✓ Cleaning pipeline completed.")
     return df
