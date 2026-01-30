@@ -6,7 +6,6 @@ import pandas as pd
 #  Helper utilities
 # ----------------------------------------------------------
 
-
 def _safe_str(col: pd.Series) -> pd.Series:
     """Convert a column to lowercase, stripped strings safely."""
     return col.astype(str).str.strip().str.lower()
@@ -76,6 +75,30 @@ def clean_payment(df: pd.DataFrame) -> pd.DataFrame:
         "mobilbetalning": "swish",
         "faktura": "invoice",
         }
-    col = _safe_str(df["betalmetod"]).replace("nan", None).replace(mapping)
-    df["betalmetod"] = col.fillna("unknown")
+    col = _safe_str(df["betalmetod"]).replace("nan", None).replace(mapping).replace(["nan", "none", ""], "unknown")
+    df["betalmetod"] = col
     return df
+
+def clean_leveransstatus(df: pd.DataFrame) -> pd.DataFrame:
+    
+    """Normalize delivery status labels."""
+    
+    if "leveransstatus" not in df.columns:
+        return df
+    mapping = {
+        "levererad": "delivered",
+        "mottagen": "received",
+        "skickad": "sent",
+        "under transport": "in_transit",
+        "på väg": "in_transit",
+        "pa väg": "in_transit",
+        "pa vag": "in_transit",
+        "retur": "returned",
+        "returnerad": "returned",
+        "återsänd": "returned",
+        "atersand": "returned",
+        } 
+    col = _safe_str(df["leveransstatus"]).replace(mapping).replace(["nan", "none", ""], "unknown")
+    df["leveransstatus"] = col
+    return df
+
