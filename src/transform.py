@@ -1,5 +1,5 @@
 import pandas as pd
-
+import numpy as np
 
 # ---------------------------------------------------------
 #  Helper utilities
@@ -218,3 +218,16 @@ def fix_reversed_dates(df: pd.DataFrame) -> pd.DataFrame:
         mask, ["leveransdatum", "orderdatum"]
     ].values
     return df
+
+
+def clean_recension_text(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Clean review text column by removing placeholder strings.
+    """ 
+    if "recension_text" not in df.columns:
+        return df
+    col = df["recension_text"].astype(str).str.strip()
+    col = col.replace(["nan", "none", "null", "na", ""], np.nan)
+    df["recension_text"] = col 
+    return df
+
