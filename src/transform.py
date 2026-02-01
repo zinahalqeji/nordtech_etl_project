@@ -52,13 +52,43 @@ def clean_id_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 def clean_date(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Convert date columns to datetime.
+    Convert date columns to datetime, including Swedish month names.
+    Uses _safe_str() to normalize text before parsing.
     """
+
+    swedish_months = {
+        "januari": "01",
+        "februari": "02",
+        "mars": "03",
+        "april": "04",
+        "maj": "05",
+        "juni": "06",
+        "juli": "07",
+        "augusti": "08",
+        "september": "09",
+        "oktober": "10",
+        "november": "11",
+        "december": "12",
+    }
+
     date_cols = ["orderdatum", "leveransdatum", "recensionsdatum"]
 
     for col in date_cols:
-        if col in df.columns:
-            df[col] = pd.to_datetime(df[col], errors="coerce")
+        if col not in df.columns:
+            continue
+
+        # Normalize text using your helper
+        col_series = _safe_str(df[col])
+
+        # Replace Swedish month names with month numbers
+        for swe, num in swedish_months.items():
+            col_series = col_series.str.replace(swe, num, regex=False)
+
+        # Convert "5 12 2024" → "5-12-2024"
+        col_series = col_series.str.replace(" ", "-", regex=False)
+
+        # Parse as datetime (day-first format)
+        df[col] = pd.to_datetime(col_series, errors="coerce", dayfirst=True)
 
     return df
 
