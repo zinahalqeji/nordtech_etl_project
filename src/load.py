@@ -1,3 +1,9 @@
+"""
+load.py
+
+Handles saving cleaned data to CSV and SQLite.
+"""
+
 from __future__ import annotations
 import pandas as pd
 import sqlite3
@@ -21,14 +27,9 @@ TABLE_NAME = "clean_orders"
 
 
 def save_to_csv(df: pd.DataFrame, filename: str = "nordtech_cleaned.csv") -> Path:
-    """
-    Save the cleaned DataFrame to data/processed.
-    """
     PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
-
     output_path = PROCESSED_DIR / filename
     df.to_csv(output_path, index=False, encoding="utf-8")
-
     print(f"[LOAD] CSV saved successfully → {output_path}")
     return output_path
 
@@ -41,9 +42,6 @@ def save_to_csv(df: pd.DataFrame, filename: str = "nordtech_cleaned.csv") -> Pat
 def save_to_sqlite(
     df: pd.DataFrame, db_path: Path = DB_PATH, table: str = TABLE_NAME
 ) -> None:
-    """
-    Save the cleaned DataFrame into a SQLite database.
-    """
     DB_DIR.mkdir(parents=True, exist_ok=True)
 
     with sqlite3.connect(db_path) as conn:
@@ -57,11 +55,12 @@ def save_to_sqlite(
 # --------------------------------------------------
 
 
-def load_clean_data(df: pd.DataFrame) -> None:
+def load_clean_data(df: pd.DataFrame, table_name: str = TABLE_NAME) -> None:
     """
     Save cleaned data to both CSV and SQLite.
+    Accepts table_name so the pipeline can write main + validation datasets.
     """
     print("[LOAD] Starting load process...")
     save_to_csv(df)
-    save_to_sqlite(df)
+    save_to_sqlite(df, table=table_name)
     print("[LOAD] Load process completed.")

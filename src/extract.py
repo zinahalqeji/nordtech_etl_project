@@ -32,12 +32,11 @@ def load_csv(file_path: Path) -> pd.DataFrame:
 # --------------------------------------------------
 
 
-def load_raw_data() -> pd.DataFrame:
+def load_raw_data(path: str) -> pd.DataFrame:
     """
-    Load the raw Nordtech dataset from data/raw.
+    Load a raw dataset from a given file path.
+    This allows the pipeline to run on both main and validation datasets.
     """
-    root = Path(__file__).resolve().parents[1]
-    raw_path = root / "data" / "raw" / "nordtech_data.csv"
-
-    print(f"[EXTRACT] Loading raw dataset from: {raw_path}")
-    return load_csv(raw_path)
+    file_path = Path(path)
+    print(f"[EXTRACT] Loading raw dataset from: {file_path}")
+    return load_csv(file_path)
