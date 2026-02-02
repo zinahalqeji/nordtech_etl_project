@@ -52,8 +52,10 @@ def clean_id_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 def clean_date(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Convert date columns to datetime, including Swedish month names.
-    Uses _safe_str() to normalize text before parsing.
+    Convert date columns to datetime, including:
+    - ISO format (YYYY-MM-DD)
+    - Slash format (YYYY/MM/DD)
+    - Swedish month names (e.g., '5 december 2024')
     """
 
     swedish_months = {
@@ -77,18 +79,28 @@ def clean_date(df: pd.DataFrame) -> pd.DataFrame:
         if col not in df.columns:
             continue
 
-        # Normalize text using your helper
         col_series = _safe_str(df[col])
 
-        # Replace Swedish month names with month numbers
+        # Normalize slashes → hyphens
+        col_series = col_series.str.replace("/", "-", regex=False)
+
+        # Detect ISO format
+        iso_mask = col_series.str.match(r"^\d{4}-\d{2}-\d{2}$")
+        df.loc[iso_mask, col] = pd.to_datetime(col_series[iso_mask], errors="coerce")
+
+        # Swedish month names
+        sw_mask = ~iso_mask
+        sw_series = col_series[sw_mask]
+
         for swe, num in swedish_months.items():
-            col_series = col_series.str.replace(swe, num, regex=False)
+            sw_series = sw_series.str.replace(swe, num, regex=False)
 
-        # Convert "5 12 2024" → "5-12-2024"
-        col_series = col_series.str.replace(" ", "-", regex=False)
+        sw_series = sw_series.str.replace(" ", "-", regex=False)
 
-        # Parse as datetime (day-first format)
-        df[col] = pd.to_datetime(col_series, errors="coerce", dayfirst=True)
+        df.loc[sw_mask, col] = pd.to_datetime(sw_series, errors="coerce", dayfirst=True)
+
+        # Final enforcement
+        df[col] = pd.to_datetime(df[col], errors="coerce")
 
     return df
 
