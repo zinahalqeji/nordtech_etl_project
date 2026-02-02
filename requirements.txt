@@ -12,3 +12,6 @@ sqlalchemy>=2.0
 jupyter
 ipykernel
 tqdm
+
+transformers
+torch
