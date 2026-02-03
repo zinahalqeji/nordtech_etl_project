@@ -52,11 +52,14 @@ def clean_id_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 def clean_date(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Convert date columns to datetime, including:
-    - ISO format (YYYY-MM-DD)
-    - Slash format (YYYY/MM/DD)
-    - Swedish month names (e.g., '5 december 2024')
+    Clean and standardize date columns with mixed formats:
+    - ISO (YYYY-MM-DD)
+    - Slash (YYYY/MM/DD)
+    - Swedish text dates (e.g. '5 december 2024')
+
+    Unparseable values are coerced to NaT.
     """
+    date_cols = ["orderdatum", "leveransdatum", "recensionsdatum"]
 
     swedish_months = {
         "januari": "01",
@@ -73,34 +76,22 @@ def clean_date(df: pd.DataFrame) -> pd.DataFrame:
         "december": "12",
     }
 
-    date_cols = ["orderdatum", "leveransdatum", "recensionsdatum"]
-
     for col in date_cols:
         if col not in df.columns:
             continue
 
-        col_series = _safe_str(df[col])
+        # Normalize safely using shared helper
+        series = _safe_str(df[col])
 
-        # Normalize slashes → hyphens
-        col_series = col_series.str.replace("/", "-", regex=False)
+        # Replace Swedish month names with English
+        for sv, en in swedish_months.items():
+            series = series.str.replace(rf"\b{sv}\b", en, regex=True)
 
-        # Detect ISO format
-        iso_mask = col_series.str.match(r"^\d{4}-\d{2}-\d{2}$")
-        df.loc[iso_mask, col] = pd.to_datetime(col_series[iso_mask], errors="coerce")
+        # Normalize separators
+        series = series.str.replace("/", "-", regex=False)
 
-        # Swedish month names
-        sw_mask = ~iso_mask
-        sw_series = col_series[sw_mask]
-
-        for swe, num in swedish_months.items():
-            sw_series = sw_series.str.replace(swe, num, regex=False)
-
-        sw_series = sw_series.str.replace(" ", "-", regex=False)
-
-        df.loc[sw_mask, col] = pd.to_datetime(sw_series, errors="coerce", dayfirst=True)
-
-        # Final enforcement
-        df[col] = pd.to_datetime(df[col], errors="coerce")
+        # Convert to datetime
+        df[col] = pd.to_datetime(series, errors="coerce", dayfirst=True)
 
     return df
 

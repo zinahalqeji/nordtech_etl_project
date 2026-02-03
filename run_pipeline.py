@@ -38,13 +38,4 @@ def run_pipeline(path: str, table_name: str) -> None:
 
 if __name__ == "__main__":
     # Main dataset
-    run_pipeline(
-        path="data/raw/nordtech_data.csv",
-        table_name="orders_clean"
-    )
-
-    # Validation dataset
-    run_pipeline(
-        path="data/raw/nordtech_validation.csv",
-        table_name="orders_clean_validation"
-    )
+    run_pipeline(path="data/raw/nordtech_data.csv", table_name="orders_clean")
