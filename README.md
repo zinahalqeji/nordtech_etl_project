@@ -29,7 +29,7 @@ NORDTECH_ETL_PROJECT/
 │
 ├── reports/
 │   ├── data_dictionary.md
-│   └── reflection.md
+│   └── reflection.pdf
 │
 ├── src/
 │   ├── __init__.py
@@ -204,7 +204,7 @@ Figures include:
 ## 📘 Documentation
 
 - **Data Dictionary** → `reports/data_dictionary.md`  
-- **Reflection** → `reports/reflection.md`  
+- **Reflection** → `reports/reflection.pdf`  
 
 ---
 
