@@ -1,15 +1,21 @@
-from __future__ import annotations
+"""
+run_pipeline.py
+
+Main entry point for the Nordtech ETL pipeline.
+"""
+
 import pandas as pd
 
 from src.extract import load_main_data
 from src.transform import transform_data
 from src.load import load_clean_data
 from src.sentiment import add_sentiment_column
+from src.config import RAW_MAIN
 
 
-def run_pipeline(path: str, table_name: str) -> None:
+def run_pipeline() -> None:
     print("\n==============================")
-    print(f"🚀 Running ETL Pipeline for: {path}")
+    print(f"🚀 Running ETL Pipeline for: {RAW_MAIN}")
     print("==============================\n")
 
     # Extract
@@ -28,8 +34,8 @@ def run_pipeline(path: str, table_name: str) -> None:
     print("[SENTIMENT] Sentiment scores added successfully")
 
     # Load
-    print("\n[3/3] Loading cleaned data into SQLite...")
-    load_clean_data(df_clean, table_name=table_name)
+    print("\n[3/3] Loading cleaned data into CSV + SQLite...")
+    load_clean_data(df_clean)
 
     print("\n==============================")
     print("✅ ETL Pipeline Completed Successfully 👌😊")
@@ -37,5 +43,4 @@ def run_pipeline(path: str, table_name: str) -> None:
 
 
 if __name__ == "__main__":
-    # Main dataset
-    run_pipeline(path="data/raw/nordtech_data.csv", table_name="orders_clean")
+    run_pipeline()

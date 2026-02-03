@@ -4,21 +4,10 @@ load.py
 Handles saving cleaned data to CSV and SQLite.
 """
 
-from __future__ import annotations
 import pandas as pd
 import sqlite3
 from pathlib import Path
-
-# --------------------------------------------------
-# Configuration
-# --------------------------------------------------
-
-ROOT_DIR = Path(__file__).resolve().parents[1]
-DATA_DIR = ROOT_DIR / "data"
-PROCESSED_DIR = DATA_DIR / "processed"
-DB_DIR = ROOT_DIR / "database"
-DB_PATH = DB_DIR / "nordtech.db"
-TABLE_NAME = "clean_orders"
+from src.config import CLEANED, DB_PATH, TABLE_NAME
 
 
 # --------------------------------------------------
@@ -26,11 +15,16 @@ TABLE_NAME = "clean_orders"
 # --------------------------------------------------
 
 
-def save_to_csv(df: pd.DataFrame, filename: str = "nordtech_cleaned.csv") -> Path:
-    PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
-    output_path = PROCESSED_DIR / filename
+def save_cleaned_csv(df: pd.DataFrame, output_path: str = CLEANED) -> Path:
+    """
+    Save the cleaned dataset to a CSV file defined in config.py.
+    """
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
     df.to_csv(output_path, index=False, encoding="utf-8")
     print(f"[LOAD] CSV saved successfully → {output_path}")
+
     return output_path
 
 
@@ -39,15 +33,21 @@ def save_to_csv(df: pd.DataFrame, filename: str = "nordtech_cleaned.csv") -> Pat
 # --------------------------------------------------
 
 
-def save_to_sqlite(
-    df: pd.DataFrame, db_path: Path = DB_PATH, table: str = TABLE_NAME
+def load_to_sqlite(
+    df: pd.DataFrame,
+    db_path: str = DB_PATH,
+    table_name: str = TABLE_NAME,
 ) -> None:
-    DB_DIR.mkdir(parents=True, exist_ok=True)
+    """
+    Save the cleaned dataset to a SQLite database.
+    """
+    db_path = Path(db_path)
+    db_path.parent.mkdir(parents=True, exist_ok=True)
 
     with sqlite3.connect(db_path) as conn:
-        df.to_sql(table, conn, if_exists="replace", index=False)
+        df.to_sql(table_name, conn, if_exists="replace", index=False)
 
-    print(f"[LOAD] SQLite table '{table}' updated successfully → {db_path}")
+    print(f"[LOAD] SQLite table '{table_name}' updated successfully → {db_path}")
 
 
 # --------------------------------------------------
@@ -55,12 +55,11 @@ def save_to_sqlite(
 # --------------------------------------------------
 
 
-def load_clean_data(df: pd.DataFrame, table_name: str = TABLE_NAME) -> None:
+def load_clean_data(df: pd.DataFrame) -> None:
     """
     Save cleaned data to both CSV and SQLite.
-    Accepts table_name so the pipeline can write main + validation datasets.
     """
     print("[LOAD] Starting load process...")
-    save_to_csv(df)
-    save_to_sqlite(df, table=table_name)
+    save_cleaned_csv(df)
+    load_to_sqlite(df)
     print("[LOAD] Load process completed.")

@@ -8,7 +8,6 @@ Uses a multilingual BERT model from Hugging Face.
 """
 
 import pandas as pd
-from typing import Optional
 from transformers import pipeline
 
 # Initialize model once (global) so it's reused
@@ -17,12 +16,12 @@ _sentiment_model = pipeline(
 )
 
 
-def compute_sentiment_label(text: Optional[str]) -> str:
+def compute_sentiment_label(text: str | None) -> str:
     """
     Compute sentiment category (positive/neutral/negative) for a single text.
 
     Args:
-        text (str or None): Review text.
+        text (str | None): Review text.
 
     Returns:
         str: "positive", "neutral", or "negative".
