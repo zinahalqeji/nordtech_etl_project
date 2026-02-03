@@ -237,6 +237,6 @@ VS Code
 
 ## 👩‍💻 Author
 
-**Zinah**  
+**Zinah Alqeji**  
 Data Manager Student  
 Stockholm, Sweden
