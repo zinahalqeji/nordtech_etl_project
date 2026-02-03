@@ -102,7 +102,7 @@ TABLE_NAME = "clean_orders"
 Loads raw datasets:
 
 ```python
-df = load_main_data()
+df_raw = load_main_data()
 ```
 
 ---
@@ -124,32 +124,34 @@ Applies all cleaning steps:
 Usage:
 
 ```python
-df_clean = transform_data(df)
+df_clean = transform_data(df_raw)
 ```
 
 ---
 
 ### 💬 `src/sentiment.py`
-Runs BERT sentiment classification:
+Adds sentiment using multilingual BERT:
 
 ```python
-df = add_sentiment(df)
+df_clean = add_sentiment_column(df_clean, text_column="recension_text")
 ```
 
-Adds:
+Sentiment categories:
 
 ```
-sentiment_category = ["positive", "neutral", "negative"]
+positive
+neutral
+negative
 ```
 
 ---
 
 ### 📤 `src/load.py`
-Saves outputs:
+Saves outputs using paths from `config.py`:
 
 ```python
-save_cleaned_csv(df, CLEANED)
-load_to_sqlite(df, DB_PATH, TABLE_NAME)
+save_cleaned_csv(df_clean)
+load_to_sqlite(df_clean)
 ```
 
 ---
@@ -197,12 +199,6 @@ Figures include:
 - Sentiment distribution  
 - Orders per customer  
 
-Figures are saved to:
-
-```
-presentation/figures/
-```
-
 ---
 
 ## 📘 Documentation
@@ -241,6 +237,6 @@ VS Code
 
 ## 👩‍💻 Author
 
-**Zinah Alqeji**  
+**Zinah**  
 Data Manager Student  
 Stockholm, Sweden
