@@ -1,7 +1,7 @@
 from __future__ import annotations
 import pandas as pd
 
-from src.extract import load_raw_data
+from src.extract import load_main_data
 from src.transform import transform_data
 from src.load import load_clean_data
 from src.sentiment import add_sentiment_column
@@ -14,7 +14,7 @@ def run_pipeline(path: str, table_name: str) -> None:
 
     # Extract
     print("[1/3] Extracting raw data...")
-    df_raw = load_raw_data(path)
+    df_raw = load_main_data()
     print(f"[EXTRACT] Raw rows loaded: {len(df_raw)}")
 
     # Transform
