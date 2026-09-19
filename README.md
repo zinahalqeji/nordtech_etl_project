@@ -1,15 +1,34 @@
-# 🧰 Nordtech ETL Pipeline — Developer Guide
+# 🧰 Nordtech ETL Pipeline
 
-A complete, modular ETL pipeline for Nordtech’s e‑commerce dataset.  
-This project extracts, cleans, transforms, enriches, and loads data into a SQLite database, applies BERT sentiment analysis, and generates business‑ready KPIs and visualizations.
+A complete, modular ETL pipeline for Nordtech's e-commerce dataset.
 
-This README is written as a **developer‑style tutorial** so anyone can run and understand the pipeline.
+This project extracts, cleans, transforms, enriches, and loads data into a SQLite database, applies BERT sentiment analysis, and generates business-ready KPIs and visualizations.
+
+The processed data is also presented through a deployed interactive Streamlit dashboard.
+
+---
+
+## 🌐 Live Interactive Dashboard
+
+The results of the ETL pipeline can be explored through an interactive Streamlit application.
+
+👉 **Live Dashboard:** [Nordtech ETL Dashboard](https://nordtechetlproject-sujkvhjnjgr7osud54u3ki.streamlit.app/)
+
+The dashboard includes:
+
+- Interactive filters for category, region, and customer type
+- Total revenue, orders, customers, and average rating KPIs
+- Revenue analysis by product category
+- Customer review sentiment analysis
+- Preview of the processed ETL dataset
+
+The dashboard uses the cleaned data produced by the ETL pipeline and provides an interactive way to explore the results.
 
 ---
 
 ## 📁 Project Structure
 
-```
+```text
 NORDTECH_ETL_PROJECT/
 │
 ├── data/
@@ -37,12 +56,43 @@ NORDTECH_ETL_PROJECT/
 │   ├── extract.py
 │   ├── transform.py
 │   ├── sentiment.py
-│   ├── load.py
-│   └── __pycache__/
+│   └── load.py
 │
 ├── run_pipeline.py
+├── streamlit_app.py
 ├── requirements.txt
 └── README.md
+```
+
+---
+
+## 🔄 ETL Workflow
+
+The project follows a modular ETL workflow:
+
+```text
+Raw CSV Data
+     │
+     ▼
+   Extract
+     │
+     ▼
+  Transform
+     │
+     ▼
+BERT Sentiment Analysis
+     │
+     ▼
+    Load
+   ┌─────┴─────┐
+   ▼           ▼
+Cleaned CSV   SQLite
+                 │
+                 ▼
+          KPI Analysis
+                 │
+                 ▼
+      Streamlit Dashboard
 ```
 
 ---
@@ -53,6 +103,11 @@ NORDTECH_ETL_PROJECT/
 
 ```bash
 python -m venv venv
+```
+
+On Windows:
+
+```bash
 venv\Scripts\activate
 ```
 
@@ -72,21 +127,22 @@ Execute the full ETL process with:
 python run_pipeline.py
 ```
 
-This script performs:
+The pipeline performs:
 
-```
+```text
 [1] Extract   → Load raw CSV files
-[2] Transform → Clean, normalize, engineer features
+[2] Transform → Clean, normalize, and engineer features
 [3] Sentiment → Apply BERT model to review text
-[4] Load      → Save cleaned CSV + write to SQLite
+[4] Load      → Save cleaned CSV and write to SQLite
 ```
 
 ---
 
-## 🧩 ETL Modules Overview
+## 🧩 ETL Modules
 
 ### 🔧 `src/config.py`
-Centralized configuration for all file paths:
+
+Centralized configuration for file paths and database settings.
 
 ```python
 RAW_MAIN = "data/raw/nordtech_data.csv"
@@ -99,7 +155,10 @@ TABLE_NAME = "clean_orders"
 ---
 
 ### 📥 `src/extract.py`
-Loads raw datasets:
+
+Responsible for loading the raw datasets used by the pipeline.
+
+Example:
 
 ```python
 df_raw = load_main_data()
@@ -108,20 +167,26 @@ df_raw = load_main_data()
 ---
 
 ### 🧼 `src/transform.py`
-Applies all cleaning steps:
 
-- Standardizes column names  
-- Cleans IDs  
-- Parses mixed date formats  
-- Fixes reversed dates  
-- Normalizes regions, payment methods, customer types  
-- Cleans Swedish number words  
-- Cleans prices  
-- Cleans ratings  
-- Cleans review text  
-- Removes duplicates  
+Handles data cleaning and transformation.
 
-Usage:
+The transformation process includes:
+
+- Standardizing column names
+- Cleaning IDs
+- Parsing mixed date formats
+- Fixing reversed dates
+- Normalizing regions
+- Normalizing payment methods
+- Normalizing customer types
+- Cleaning Swedish number words
+- Cleaning prices
+- Cleaning ratings
+- Cleaning review text
+- Removing duplicates
+- Preparing the dataset for analysis
+
+Example:
 
 ```python
 df_clean = transform_data(df_raw)
@@ -130,7 +195,10 @@ df_clean = transform_data(df_raw)
 ---
 
 ### 💬 `src/sentiment.py`
-Adds sentiment using multilingual BERT:
+
+Adds sentiment classification to customer reviews using a multilingual BERT model.
+
+Example:
 
 ```python
 df_clean = add_sentiment_column(df_clean, text_column="recension_text")
@@ -138,16 +206,21 @@ df_clean = add_sentiment_column(df_clean, text_column="recension_text")
 
 Sentiment categories:
 
-```
+```text
 positive
 neutral
 negative
 ```
 
+This enriches the transactional dataset with information that can be used to analyze customer feedback.
+
 ---
 
 ### 📤 `src/load.py`
-Saves outputs using paths from `config.py`:
+
+Handles the final loading stage of the ETL pipeline.
+
+The processed dataset is saved as a cleaned CSV file and loaded into SQLite.
 
 ```python
 save_cleaned_csv(df_clean)
@@ -160,17 +233,17 @@ load_to_sqlite(df_clean)
 
 The cleaned dataset is stored in:
 
-```
+```text
 database/nordtech.db
 ```
 
-Table name:
+Table:
 
-```
+```text
 clean_orders
 ```
 
-Example query:
+Example SQL query:
 
 ```sql
 SELECT region, SUM(total_price)
@@ -178,65 +251,160 @@ FROM clean_orders
 GROUP BY region;
 ```
 
+The SQLite database makes it possible to query the transformed data using SQL after the ETL pipeline has completed.
+
 ---
 
 ## 📊 KPI Analysis
 
-All KPI visualizations are created in:
+Business-oriented analysis is performed in:
 
-```
+```text
 notebooks/03_kpi_analysis.ipynb
 ```
 
-Figures include:
+The analysis includes:
 
-- Revenue by month  
-- Revenue by category  
-- Revenue by region  
-- Top 10 best sellers  
-- Delivery time distribution  
-- Rating distribution  
-- Sentiment distribution  
-- Orders per customer  
+- Revenue by month
+- Revenue by category
+- Revenue by region
+- Top 10 best-selling products
+- Delivery time distribution
+- Rating distribution
+- Sentiment distribution
+- Orders per customer
+
+These KPIs provide an analytical view of the cleaned e-commerce data.
+
+---
+
+## 📈 Interactive Streamlit Dashboard
+
+The dashboard is implemented in:
+
+```text
+streamlit_app.py
+```
+
+Run it locally with:
+
+```bash
+streamlit run streamlit_app.py
+```
+
+The application provides interactive filtering by:
+
+- Product category
+- Region
+- Customer type
+
+The dashboard automatically recalculates KPIs and visualizations when filters are changed.
+
+Displayed KPIs include:
+
+```text
+Total Revenue
+Orders
+Customers
+Average Rating
+```
+
+The application also presents:
+
+- Revenue by category
+- Customer review sentiment
+- Processed data preview
+
+The application is deployed through Streamlit Community Cloud so the project can be explored directly in a browser.
 
 ---
 
 ## 📘 Documentation
 
-- **Data Dictionary** → `reports/data_dictionary.md`  
-- **Reflection** → `reports/reflection.pdf`  
+Additional project documentation is available in:
+
+- **Data Dictionary:** `reports/data_dictionary.md`
+- **Reflection:** `reports/reflection.pdf`
 
 ---
 
 ## 🛠️ Tech Stack
 
-```
+### Data Engineering & Analysis
+
+```text
 Python
 pandas
-numpy
-matplotlib / seaborn
-transformers (BERT)
+NumPy
 SQLite
+SQL
+```
+
+### Machine Learning / NLP
+
+```text
+Transformers
+Multilingual BERT
+PyTorch
+```
+
+### Visualization & Application
+
+```text
+Streamlit
+Matplotlib
+Seaborn
+```
+
+### Development
+
+```text
 Jupyter Notebook
 VS Code
+Git
+GitHub
 ```
 
 ---
 
 ## 🎯 Project Goals
 
-```
-✔ Build a professional ETL pipeline
-✔ Clean and standardize messy real-world data
-✔ Apply NLP sentiment analysis
-✔ Generate business-ready KPIs
-✔ Produce clear visualizations for presentation
-```
+The main goals of the project were to:
+
+- ✔ Build a modular ETL pipeline
+- ✔ Clean and standardize messy real-world-style data
+- ✔ Separate ETL responsibilities into reusable Python modules
+- ✔ Store processed data in SQLite
+- ✔ Apply NLP sentiment analysis to customer reviews
+- ✔ Generate business-oriented KPIs
+- ✔ Create clear data visualizations
+- ✔ Build an interactive dashboard
+- ✔ Deploy the dashboard as a live web application
+
+---
+
+## 👩‍💻 Development
+
+This project was developed independently by me.
+
+I worked on the full data workflow, including:
+
+- Data exploration
+- Data cleaning and transformation
+- Modular ETL development
+- SQLite data loading
+- Sentiment analysis
+- KPI analysis
+- Data visualization
+- Streamlit dashboard development
+- Deployment of the interactive application
+
+The project demonstrates how raw e-commerce data can be transformed into structured, queryable, and business-ready information and then presented through an interactive application.
 
 ---
 
 ## 👩‍💻 Author
 
 **Zinah Alqeji**  
-Data Manager Student  
+Data Management Student  
 Stockholm, Sweden
